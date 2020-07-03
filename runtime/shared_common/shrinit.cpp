@@ -3840,6 +3840,30 @@ j9shr_init(J9JavaVM *vm, UDATA loadFlags, UDATA* nonfatal)
 		returnVal = J9VMDLLMAIN_SILENT_EXIT_VM;
 	}
 
+	JNIEnv *env = (JNIEnv *) currentThread;
+
+	jclass archivedModuleGraphClass;
+	jfieldID fid;
+	jobject archivedModuleGraph;
+
+	/* private static SystemModules archivedSystemModules;
+    	private static ModuleFinder archivedModuleFinder; 
+	*/
+	archivedModuleGraphClass = (*env)->FindClass(env, "jdk/internal/module/ArchivedModuleGraph");
+	printf("now finding field id");
+	fid = (*env)->GetStaticFieldID(env, archivedModuleGraphClass, "archivedSystemModules", "Ljava/lang/Object");
+	printf("now finding jobject");
+	archivedModuleGraph = (*env)->GetStaticObjectField(env, archivedModuleGraphClass, fid);
+	printf("now finding j9object");
+	j9object_t heaparray = J9_JNI_UNWRAP_REFERENCE(archivedModuleGraph);
+
+	#include fstream
+	#include iostream
+	std::ofstream myfile;
+  	myfile.open ("example.txt");
+  	myfile << heaparray;
+  	myfile.close();
+	
 	return returnVal;
 
 _error:
