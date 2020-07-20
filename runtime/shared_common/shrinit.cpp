@@ -3849,21 +3849,7 @@ j9shr_init(J9JavaVM *vm, UDATA loadFlags, UDATA* nonfatal)
 	/* private static SystemModules archivedSystemModules;
     	private static ModuleFinder archivedModuleFinder; 
 	*/
-	archivedModuleGraphClass = (*env)->FindClass(env, "jdk/internal/module/ArchivedModuleGraph");
-	printf("now finding field id");
-	fid = (*env)->GetStaticFieldID(env, archivedModuleGraphClass, "archivedSystemModules", "Ljava/lang/Object");
-	printf("now finding jobject");
-	archivedModuleGraph = (*env)->GetStaticObjectField(env, archivedModuleGraphClass, fid);
-	printf("now finding j9object");
-	j9object_t heaparray = J9_JNI_UNWRAP_REFERENCE(archivedModuleGraph);
 
-	#include fstream
-	#include iostream
-	std::ofstream myfile;
-  	myfile.open ("example.txt");
-  	myfile << heaparray;
-  	myfile.close();
-	
 	return returnVal;
 
 _error:
@@ -5049,6 +5035,34 @@ j9shr_jvmPhaseChange(J9VMThread *currentThread, UDATA phase)
 		}
 		((SH_CacheMap*)vm->sharedClassConfig->sharedClassCache)->dontNeedMetadata(currentThread);
 	}
+
+	JNIEnv *env = (JNIEnv *)currentThread;
+	jclass archivedModuleGraphClass;
+	jfieldID fid;
+	jobject archivedModuleGraph;
+
+	/* private static SystemModules archivedSystemModules
+		private static ModuleFinder archivedModuleFinder
+	*/
+
+	archivedModuleGraphClass = env->FindClass("jdk/internal/module/ArchivedModuleGraph");
+	J9Class * clazz = J9VM_J9CLASS_FROM_JCLASS(currentThread, archivedModuleGraphClass);
+	if (clazz->romClass == NULL) {printf("null \n");}
+	if (clazz->superclasses == NULL) {printf("null \n");}
+	// printf("now finding field id for %s \n", (const char *)(archivedModuleGraphClass));
+	fid = env->GetStaticFieldID(archivedModuleGraphClass, "archivedSystemModules", "Ljava/lang/Object");
+	// printf("now finding jobject %s \n", (const char *)fid);
+	archivedModuleGraph = env->GetStaticObjectField(archivedModuleGraphClass, fid);
+	// printf("now finding j9object: \n  %s \n", (const char *)archivedModuleGraph);
+	j9object_t heaparray = J9_JNI_UNWRAP_REFERENCE(archivedModuleGraph);
+	// printf("printing heap");
+	// printf("%s", (const char*)heaparray);
+	FILE * myfile = NULL;
+	myfile = fopen ("example.txt", "w+");
+	fputs((const char*)heaparray, myfile);
+	fclose(myfile);
+	// printf("file closed");
+
 	return;
 }
 
