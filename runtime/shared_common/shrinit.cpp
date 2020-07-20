@@ -5034,35 +5034,45 @@ j9shr_jvmPhaseChange(J9VMThread *currentThread, UDATA phase)
 			((SH_CacheMap*)vm->sharedClassConfig->sharedClassCache)->protectPartiallyFilledPages(currentThread);
 		}
 		((SH_CacheMap*)vm->sharedClassConfig->sharedClassCache)->dontNeedMetadata(currentThread);
+
+		JNIEnv *env = (JNIEnv *)currentThread;
+		jclass archivedModuleGraphClass;
+		jfieldID fid;
+		jobject archivedModuleGraph;
+
+		/* private static SystemModules archivedSystemModules
+			private static ModuleFinder archivedModuleFinder
+		*/
+
+
+		jclass testClass = env->FindClass("jdk/internal/module/TestClassForFID");
+		fid = env->GetStaticFieldID(testClass, "testField", "Ljava/lang/String;");
+		if (fid == NULL) {printf("still null...");}
+
+		archivedModuleGraphClass = env->FindClass("jdk/internal/module/ArchivedModuleGraph");
+		J9Class * clazz = J9VM_J9CLASS_FROM_JCLASS(currentThread, archivedModuleGraphClass);
+		if (clazz->romClass == NULL) {printf("null \n");}
+		if (archivedModuleGraphClass == NULL) {printf("archivedModuleGraphClass is null \n");}
+		// printf("now finding field id for \n");
+		fid = env->GetStaticFieldID(archivedModuleGraphClass, "archivedSystemModules", "jdk/internal/module/SystemModules;");
+		if(NULL == fid) {
+			printf("fid is null \n");
+		} else {
+			printf("fid is not null \n");
+		}
+		// printf("now finding jobject\n");
+		archivedModuleGraph = env->GetStaticObjectField(archivedModuleGraphClass, fid);
+		// printf("now finding j9object: \n  %s \n", (const char *)archivedModuleGraph);
+		j9object_t heaparray = J9_JNI_UNWRAP_REFERENCE(archivedModuleGraph);
+		// printf("printing heap");
+		// printf("%s", (const char*)heaparray);
+		FILE * myfile = NULL;
+		myfile = fopen ("example.txt", "w+");
+		fputs((const char*)heaparray, myfile);
+		fclose(myfile);
+		// printf("file closed");
 	}
-
-	JNIEnv *env = (JNIEnv *)currentThread;
-	jclass archivedModuleGraphClass;
-	jfieldID fid;
-	jobject archivedModuleGraph;
-
-	/* private static SystemModules archivedSystemModules
-		private static ModuleFinder archivedModuleFinder
-	*/
-
-	archivedModuleGraphClass = env->FindClass("jdk/internal/module/ArchivedModuleGraph");
-	J9Class * clazz = J9VM_J9CLASS_FROM_JCLASS(currentThread, archivedModuleGraphClass);
-	if (clazz->romClass == NULL) {printf("null \n");}
-	if (clazz->superclasses == NULL) {printf("null \n");}
-	// printf("now finding field id for %s \n", (const char *)(archivedModuleGraphClass));
-	fid = env->GetStaticFieldID(archivedModuleGraphClass, "archivedSystemModules", "Ljava/lang/Object");
-	// printf("now finding jobject %s \n", (const char *)fid);
-	archivedModuleGraph = env->GetStaticObjectField(archivedModuleGraphClass, fid);
-	// printf("now finding j9object: \n  %s \n", (const char *)archivedModuleGraph);
-	j9object_t heaparray = J9_JNI_UNWRAP_REFERENCE(archivedModuleGraph);
-	// printf("printing heap");
-	// printf("%s", (const char*)heaparray);
-	FILE * myfile = NULL;
-	myfile = fopen ("example.txt", "w+");
-	fputs((const char*)heaparray, myfile);
-	fclose(myfile);
-	// printf("file closed");
-
+	
 	return;
 }
 
