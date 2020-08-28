@@ -5035,44 +5035,33 @@ j9shr_jvmPhaseChange(J9VMThread *currentThread, UDATA phase)
 		}
 		((SH_CacheMap*)vm->sharedClassConfig->sharedClassCache)->dontNeedMetadata(currentThread);
 
+		/* OpenJ9 issue; https://github.ibm.com/runtimes/openj9-issues/issues/341
+		 * Retrieve all heap data related to "ArchivedModuleGraph" and cache it to
+		 * then be restored on start-up */
 		JNIEnv *env = (JNIEnv *)currentThread;
 		jclass archivedModuleGraphClass;
 		jfieldID fid;
 		jobject archivedModuleGraph;
 
-		/* private static SystemModules archivedSystemModules
-			private static ModuleFinder archivedModuleFinder
-		*/
-
-
-		jclass testClass = env->FindClass("jdk/internal/module/TestClassForFID");
-		fid = env->GetStaticFieldID(testClass, "testField", "Ljava/lang/String;");
-		if (fid == NULL) {printf("still null...");}
-
 		archivedModuleGraphClass = env->FindClass("jdk/internal/module/ArchivedModuleGraph");
 		J9Class * clazz = J9VM_J9CLASS_FROM_JCLASS(currentThread, archivedModuleGraphClass);
-		if (clazz->romClass == NULL) {printf("null \n");}
-		if (archivedModuleGraphClass == NULL) {printf("archivedModuleGraphClass is null \n");}
-		// printf("now finding field id for \n");
-		fid = env->GetStaticFieldID(archivedModuleGraphClass, "archivedSystemModules", "jdk/internal/module/SystemModules;");
-		if(NULL == fid) {
-			printf("fid is null \n");
-		} else {
-			printf("fid is not null \n");
-		}
-		// printf("now finding jobject\n");
+		fid = env->GetStaticFieldID(archivedModuleGraphClass, "archivedSystemModules", "Ljdk/internal/module/SystemModules;");
 		archivedModuleGraph = env->GetStaticObjectField(archivedModuleGraphClass, fid);
-		// printf("now finding j9object: \n  %s \n", (const char *)archivedModuleGraph);
-		j9object_t heaparray = J9_JNI_UNWRAP_REFERENCE(archivedModuleGraph);
-		// printf("printing heap");
-		// printf("%s", (const char*)heaparray);
+		
+		j9object_t archivedModuleObject = J9_JNI_UNWRAP_REFERENCE(archivedModuleGraph);
+
+		// Incomplete function gcScanHeap, the function was started on the 
+		// GC side to retrieve all heap data related to the found j9object
+		gcScanHeap(env, &archivedModuleObject);
+
+		// For testing purposes the found heap data was being written to a file to 
+		// verify the results before caching to be restored 
 		FILE * myfile = NULL;
 		myfile = fopen ("example.txt", "w+");
-		fputs((const char*)heaparray, myfile);
+		fputs((const char*)archivedModuleObject, myfile);
 		fclose(myfile);
-		// printf("file closed");
 	}
-	
+
 	return;
 }
 

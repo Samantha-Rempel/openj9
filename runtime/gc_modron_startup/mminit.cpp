@@ -47,6 +47,7 @@
 #include "mmparse.h"
 #include "modronnls.h"
 #include "omr.h"
+#include "../gc_base/ReferenceChainWalker.hpp"
 #if defined(J9VM_GC_MODRON_TRACE) && !defined(J9VM_GC_REALTIME)
 #include "Tgc.hpp"
 #endif /* J9VM_GC_MODRON_TRACE && !defined(J9VM_GC_REALTIME) */
@@ -637,6 +638,22 @@ void j9gc_jvmPhaseChange(J9VMThread *currentThread, UDATA phase)
 				/* Nothing to do if store fails, storeGCHints already issues a trace point */
 			}
 		}
+	}
+}
+
+// Function to scan the heap and retrieve all data related to the j9object passed in
+void gcScanHeap(JNIEnv *env, j9object_t *objectPtr){
+	TEMP_RCW_STACK_SIZE = (10 * 1024 * 1024);
+	// userCallback sig:J9MODRON_REFERENCE_CHAIN_WALKER_CALLBACK(J9Object **slotPtr, J9Object *sourcePtr, void *userData, IDATA type, IDATA index, IDATA wasReportedBefore);
+	// This is an incomplete function call, userCallback has not been defined
+	MM_ReferenceChainWalker referenceChainWalker(env, TEMP_RCW_STACK_SIZE, userCallback, NULL);
+	if (referenceChainWalker.initialize(env)) {
+		referenceChainWalker.setPreindexInterfaceFields(0 != (walkFlags & J9_MU_WALK_PREINDEX_INTERFACE_FIELDS));
+		/* walker configuration complete.  Scan objects... */
+		printf("scanning \n");
+		scanReachableFromObject((MM_EnvironmentBase *)env, (J9Object *)heaparray);
+		printf("scan done \n");
+		referenceChainWalker.tearDown(env);
 	}
 }
 

@@ -1255,6 +1255,7 @@ typedef struct J9SharedClassConfig {
 	UDATA  ( *isBCIEnabled)(struct J9JavaVM *vm) ;
 	void  ( *freeClasspathData)(struct J9JavaVM *vm, void *cpData) ;
 	void  ( *jvmPhaseChange)(struct J9VMThread *currentThread, UDATA phase);
+	void  ( *gcScanHeap)(JNIEnv *env, j9object_t *objectPtr);
 	void  (*storeGCHints)(struct J9VMThread* currentThread, UDATA heapSize1, UDATA heapSize2, BOOLEAN forceReplace);
 	IDATA  (*findGCHints)(struct J9VMThread* currentThread, UDATA *heapSize1, UDATA *heapSize2);
 	void  ( *updateClasspathOpenState)(struct J9JavaVM* vm, struct J9ClassPathEntry* classPathEntries, UDATA entryIndex, UDATA entryCount, BOOLEAN isOpen);
@@ -4001,6 +4002,9 @@ typedef struct J9MemoryManagerFunctions {
 	int  ( *gcStartupHeapManagement)(struct J9JavaVM * vm) ;
 	void  ( *gcShutdownHeapManagement)(struct J9JavaVM * vm) ;
 	void ( *jvmPhaseChange)(struct J9VMThread *currentThread, UDATA phase);
+	
+	void ( *gcScanHeap)(JNIEnv *env, j9object_t *objectPtr) ;
+
 	IDATA  ( *initializeMutatorModelJava)(struct J9VMThread* vmThread) ;
 	void  ( *cleanupMutatorModelJava)(struct J9VMThread* vmThread) ;
 #if defined(J9VM_GC_FINALIZATION)
@@ -4498,6 +4502,7 @@ typedef struct J9InternalVMFunctions {
 	IDATA  ( *threadSleepImpl)(struct J9VMThread* vmThread, I_64 millis, I_32 nanos) ;
 	omrthread_monitor_t  ( *getMonitorForWait)(struct J9VMThread* vmThread, j9object_t object) ;
 	void  ( *jvmPhaseChange)(struct J9JavaVM* vm, UDATA phase) ;
+	void ( *gcScanHeap)(JNIEnv *env, j9object_t *objectPtr) ;
 	void  ( *prepareClass)(struct J9VMThread *currentThread, struct J9Class *clazz) ;
 	struct J9SFMethodTypeFrame*  ( *buildMethodTypeFrame)(struct J9VMThread *currentThread, j9object_t methodType) ;
 	void  ( *fatalRecursiveStackOverflow)(struct J9VMThread *currentThread) ;
